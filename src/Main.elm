@@ -1,20 +1,54 @@
-module Main exposing (..)
+module Main exposing (CellState(..), Model, Msg(..), init, main, update, view)
 
 import Browser
-import Html exposing (Html, text, div, h1, img)
+import Html exposing (Html, div, h1, img, text)
 import Html.Attributes exposing (src)
+
 
 
 ---- MODEL ----
 
 
+type CellState
+    = Filled
+    | NotFilled
+
+
+type alias Cell =
+    { state : CellState, rowIndex : Int, columnIndex : Int }
+
+
+type alias Board =
+    List Cell
+
+
 type alias Model =
-    {}
+    { board : Board }
+
+
+rowCount : Int
+rowCount =
+    20
+
+
+columnCount : Int
+columnCount =
+    20
+
+
+initBoard : Board
+initBoard =
+    List.range 0 rowCount
+        |> List.concatMap
+            (\rowIndex ->
+                List.range 0 columnCount
+                    |> List.map (\columnIndex -> Cell NotFilled rowIndex columnIndex)
+            )
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( {}, Cmd.none )
+    ( { board = initBoard }, Cmd.none )
 
 
 
