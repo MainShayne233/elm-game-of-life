@@ -2,7 +2,7 @@ module Main exposing (CellState(..), Model, Msg(..), init, main, update, view)
 
 import Array exposing (Array)
 import Browser
-import Html exposing (Html, div, h1, img, p, text)
+import Html exposing (Html, button, div, h1, img, p, text)
 import Html.Attributes exposing (src, style)
 import Html.Events exposing (onClick)
 
@@ -63,6 +63,7 @@ init =
 type Msg
     = NoOp
     | CellClick Int Int Cell
+    | Clear
 
 
 updateClickedCell : Board -> Int -> Int -> Cell -> Board
@@ -93,7 +94,10 @@ update msg model =
         CellClick rowIndex columnIndex cell ->
             ( { model | board = updateClickedCell model.board rowIndex columnIndex cell }, Cmd.none )
 
-        _ ->
+        Clear ->
+            ( { model | board = initBoard }, Cmd.none )
+
+        NoOp ->
             ( model, Cmd.none )
 
 
@@ -106,6 +110,7 @@ view model =
     div []
         [ h1 [] [ text "Game of Life!" ]
         , renderBoard model
+        , button [ onClick Clear ] [ text "Clear" ]
         ]
 
 
