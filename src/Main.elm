@@ -42,13 +42,19 @@ columnCount =
     20
 
 
+initCell : Cell
+initCell =
+    Cell NotFilled
+
+
+initRow : Row
+initRow =
+    Array.initialize columnCount (always initCell)
+
+
 initBoard : Board
 initBoard =
-    List.repeat rowCount
-        (List.repeat columnCount (Cell NotFilled)
-            |> Array.fromList
-        )
-        |> Array.fromList
+    Array.initialize rowCount (always initRow)
 
 
 init : ( Model, Cmd Msg )
@@ -66,17 +72,19 @@ type Msg
     | Clear
 
 
+newCellState : Cell -> CellState
+newCellState cell =
+    case cell.state of
+        Filled ->
+            NotFilled
+
+        NotFilled ->
+            Filled
+
+
 updateClickedCell : Board -> Int -> Int -> Cell -> Board
 updateClickedCell board rowIndex columnIndex cell =
     let
-        newCellState =
-            case cell.state of
-                Filled ->
-                    NotFilled
-
-                NotFilled ->
-                    Filled
-
         row =
             Array.get rowIndex board
                 |> Maybe.withDefault (Array.fromList [])
@@ -85,7 +93,7 @@ updateClickedCell board rowIndex columnIndex cell =
             Array.get columnIndex row
                 |> Maybe.withDefault (Cell cell.state)
     in
-    Array.set rowIndex (Array.set columnIndex { cellToUpdate | state = newCellState } row) board
+    Array.set rowIndex (Array.set columnIndex { cellToUpdate | state = newCellState cell } row) board
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
