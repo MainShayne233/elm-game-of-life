@@ -1,8 +1,9 @@
 module Main exposing (CellState(..), Model, Msg(..), init, main, update, view)
 
+import Array exposing (Array)
 import Browser
-import Html exposing (Html, div, h1, img, text)
-import Html.Attributes exposing (src)
+import Html exposing (Html, div, h1, img, p, text)
+import Html.Attributes exposing (src, style)
 
 
 
@@ -15,11 +16,15 @@ type CellState
 
 
 type alias Cell =
-    { state : CellState, rowIndex : Int, columnIndex : Int }
+    { state : CellState }
+
+
+type alias Row =
+    Array Cell
 
 
 type alias Board =
-    List Cell
+    Array Row
 
 
 type alias Model =
@@ -38,12 +43,11 @@ columnCount =
 
 initBoard : Board
 initBoard =
-    List.range 0 rowCount
-        |> List.concatMap
-            (\rowIndex ->
-                List.range 0 columnCount
-                    |> List.map (\columnIndex -> Cell NotFilled rowIndex columnIndex)
-            )
+    List.repeat rowCount
+        (List.repeat columnCount (Cell NotFilled)
+            |> Array.fromList
+        )
+        |> Array.fromList
 
 
 init : ( Model, Cmd Msg )
@@ -71,9 +75,45 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ img [ src "/logo.svg" ] []
-        , h1 [] [ text "Your Elm App is working!" ]
+        [ h1 [] [ text "Game of Life!" ]
+        , renderBoard model
         ]
+
+
+renderCell : Int -> Int -> Cell -> Html Msg
+renderCell rowIndex columnIndex cell =
+    div (cellStyles rowIndex columnIndex cell) []
+
+
+renderRow : Int -> Row -> Html Msg
+renderRow rowIndex row =
+    div (rowStyles rowIndex) (Array.toList (Array.indexedMap (\columnIndex cell -> renderCell rowIndex columnIndex cell) row))
+
+
+renderBoard : Model -> Html Msg
+renderBoard { board } =
+    div boardStyles (Array.toList (Array.indexedMap renderRow board))
+
+
+
+---- STYLES ----
+
+
+boardStyles =
+    [ style "display" "flex", style "flex-direction" "column", style "align-items" "center" ]
+
+
+rowStyles rowIndex =
+    [ style "display" "flex" ]
+
+
+cellStyles rowIndex columNindex cell =
+    [ style "background-color" "light-grey"
+    , style "height" "20px"
+    , style "width" "20px"
+    , style "border-style" "solid"
+    , style "border-width" "thin"
+    ]
 
 
 
