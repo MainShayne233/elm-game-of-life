@@ -4,6 +4,7 @@ import Array exposing (Array)
 import Browser
 import Html exposing (Html, div, h1, img, p, text)
 import Html.Attributes exposing (src, style)
+import Html.Events exposing (onClick)
 
 
 
@@ -61,11 +62,39 @@ init =
 
 type Msg
     = NoOp
+    | CellClick Int Int Cell
+
+
+updateClickedCell : Board -> Int -> Int -> Cell -> Board
+updateClickedCell board rowIndex columnIndex cell =
+    let
+        newCellState =
+            case cell.state of
+                Filled ->
+                    NotFilled
+
+                NotFilled ->
+                    Filled
+
+        row =
+            Array.get rowIndex board
+                |> Maybe.withDefault (Array.fromList [])
+
+        cellToUpdate =
+            Array.get columnIndex row
+                |> Maybe.withDefault (Cell cell.state)
+    in
+    Array.set rowIndex (Array.set columnIndex { cellToUpdate | state = newCellState } row) board
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+        CellClick rowIndex columnIndex cell ->
+            ( { model | board = updateClickedCell model.board rowIndex columnIndex cell }, Cmd.none )
+
+        _ ->
+            ( model, Cmd.none )
 
 
 
@@ -82,7 +111,7 @@ view model =
 
 renderCell : Int -> Int -> Cell -> Html Msg
 renderCell rowIndex columnIndex cell =
-    div (cellStyles rowIndex columnIndex cell) []
+    div (List.append (cellStyles rowIndex columnIndex cell) [ onClick (CellClick rowIndex columnIndex cell) ]) []
 
 
 renderRow : Int -> Row -> Html Msg
@@ -108,12 +137,22 @@ rowStyles rowIndex =
 
 
 cellStyles rowIndex columNindex cell =
-    [ style "background-color" "light-grey"
+    [ style "background-color" (cellColor cell)
     , style "height" "20px"
     , style "width" "20px"
     , style "border-style" "solid"
     , style "border-width" "thin"
     ]
+
+
+cellColor : Cell -> String
+cellColor cell =
+    case cell.state of
+        Filled ->
+            "yellow"
+
+        NotFilled ->
+            "white"
 
 
 
