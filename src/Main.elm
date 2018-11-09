@@ -16,6 +16,18 @@ type CellState
     | NotFilled
 
 
+type Msg
+    = NoOp
+    | CellClick Int Int Cell
+    | Clear
+    | SetExecutionState ExecutionState
+
+
+type ExecutionState
+    = Running
+    | NotRunning
+
+
 type alias Cell =
     { state : CellState }
 
@@ -29,7 +41,7 @@ type alias Board =
 
 
 type alias Model =
-    { board : Board }
+    { board : Board, executionState : ExecutionState }
 
 
 rowCount : Int
@@ -59,17 +71,11 @@ initBoard =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { board = initBoard }, Cmd.none )
+    ( { board = initBoard, executionState = NotRunning }, Cmd.none )
 
 
 
 ---- UPDATE ----
-
-
-type Msg
-    = NoOp
-    | CellClick Int Int Cell
-    | Clear
 
 
 newCellState : Cell -> CellState
@@ -105,6 +111,9 @@ update msg model =
         Clear ->
             ( { model | board = initBoard }, Cmd.none )
 
+        SetExecutionState executionState ->
+            ( { model | executionState = executionState }, Cmd.none )
+
         NoOp ->
             ( model, Cmd.none )
 
@@ -118,8 +127,19 @@ view model =
     div []
         [ h1 [] [ text "Game of Life!" ]
         , renderBoard model
+        , renderExecutionControlButton model
         , button [ onClick Clear ] [ text "Clear" ]
         ]
+
+
+renderExecutionControlButton : Model -> Html Msg
+renderExecutionControlButton { executionState } =
+    case executionState of
+        Running ->
+            button [ onClick (SetExecutionState NotRunning) ] [ text "Stop" ]
+
+        NotRunning ->
+            button [ onClick (SetExecutionState Running) ] [ text "Start" ]
 
 
 renderCell : Int -> Int -> Cell -> Html Msg
