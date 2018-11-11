@@ -2,9 +2,11 @@ module Main exposing (CellState(..), Model, Msg(..), init, main, update, view)
 
 import Array exposing (Array)
 import Browser
+import Browser.Events exposing (onAnimationFrame)
 import Html exposing (Html, button, div, h1, img, p, text)
 import Html.Attributes exposing (src, style)
 import Html.Events exposing (onClick)
+import Time
 
 
 
@@ -21,6 +23,7 @@ type Msg
     | CellClick Int Int Cell
     | Clear
     | SetExecutionState ExecutionState
+    | HandleTick Time.Posix
 
 
 type ExecutionState
@@ -102,6 +105,32 @@ updateClickedCell board rowIndex columnIndex cell =
     Array.set rowIndex (Array.set columnIndex { cellToUpdate | state = newCellState cell } row) board
 
 
+updateCell : Board -> Int -> Int -> Cell
+updateCell board rowIndex columnIndex =
+    Cell NotFilled
+
+
+updateBoard : Board -> Board
+updateBoard board =
+    List.range 0 (columnCount - 1)
+        |> List.map
+            (\rowIndex ->
+                List.range 0 (rowCount - 1)
+                    |> List.map (\columnIndex -> updateCell board rowIndex columnIndex)
+                    |> Array.fromList
+            )
+        |> Array.fromList
+
+
+handleRunningExecution : Model -> Model
+handleRunningExecution model =
+    let
+        updatedBoard =
+            updateBoard model.board
+    in
+    { model | board = updatedBoard }
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -113,6 +142,14 @@ update msg model =
 
         SetExecutionState executionState ->
             ( { model | executionState = executionState }, Cmd.none )
+
+        HandleTick delta ->
+            case model.executionState of
+                NotRunning ->
+                    ( model, Cmd.none )
+
+                Running ->
+                    ( handleRunningExecution model, Cmd.none )
 
         NoOp ->
             ( model, Cmd.none )
@@ -192,11 +229,16 @@ cellColor cell =
 ---- PROGRAM ----
 
 
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Time.every 1000 HandleTick
+
+
 main : Program () Model Msg
 main =
     Browser.element
         { view = view
         , init = \_ -> init
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         }
