@@ -105,9 +105,33 @@ updateClickedCell board rowIndex columnIndex cell =
     Array.set rowIndex (Array.set columnIndex { cellToUpdate | state = newCellState cell } row) board
 
 
+getCell : Board -> Int -> Int -> Cell
+getCell board rowIndex columnIndex =
+    case Array.get rowIndex board of
+        Just row ->
+            case Array.get columnIndex row of
+                Just cell ->
+                    cell
+
+                _ ->
+                    Cell NotFilled
+
+        _ ->
+            Cell NotFilled
+
+
 updateCell : Board -> Int -> Int -> Cell
 updateCell board rowIndex columnIndex =
-    Cell NotFilled
+    let
+        cell =
+            getCell board rowIndex columnIndex
+    in
+    case cell.state of
+        Filled ->
+            { cell | state = NotFilled }
+
+        NotFilled ->
+            { cell | state = Filled }
 
 
 updateBoard : Board -> Board
