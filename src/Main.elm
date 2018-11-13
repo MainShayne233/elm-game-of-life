@@ -49,12 +49,12 @@ type alias Model =
 
 rowCount : Int
 rowCount =
-    20
+    40
 
 
 columnCount : Int
 columnCount =
-    20
+    40
 
 
 initCell : Cell
@@ -81,9 +81,45 @@ init =
 ---- UPDATE ----
 
 
-newCellState : Cell -> CellState
-newCellState cell =
-    case cell.state of
+amountOfFilledNeighbors : Board -> Int -> Int -> Int
+amountOfFilledNeighbors board rowIndex columnIndex =
+    List.foldl
+        (\cell acc ->
+            case cell.state of
+                Filled ->
+                    acc + 1
+
+                NotFilled ->
+                    acc
+        )
+        0
+        [ getCell board (rowIndex - 1) (columnIndex - 1)
+        , getCell board rowIndex (columnIndex - 1)
+        , getCell board (rowIndex + 1) (columnIndex - 1)
+        , getCell board (rowIndex - 1) columnIndex
+        , getCell board (rowIndex + 1) columnIndex
+        , getCell board (rowIndex - 1) (columnIndex + 1)
+        , getCell board rowIndex (columnIndex + 1)
+        , getCell board (rowIndex + 1) (columnIndex + 1)
+        ]
+
+
+determineCellState : Board -> Int -> Int -> Cell -> CellState
+determineCellState board rowIndex columnIndex cell =
+    case ( cell.state, amountOfFilledNeighbors board rowIndex columnIndex ) of
+        ( Filled, 2 ) ->
+            Filled
+
+        ( _, 3 ) ->
+            Filled
+
+        _ ->
+            NotFilled
+
+
+inverseCellState : CellState -> CellState
+inverseCellState cellState =
+    case cellState of
         Filled ->
             NotFilled
 
@@ -101,8 +137,11 @@ updateClickedCell board rowIndex columnIndex cell =
         cellToUpdate =
             Array.get columnIndex row
                 |> Maybe.withDefault (Cell cell.state)
+
+        newCellState =
+            inverseCellState cellToUpdate.state
     in
-    Array.set rowIndex (Array.set columnIndex { cellToUpdate | state = newCellState cell } row) board
+    Array.set rowIndex (Array.set columnIndex { cellToUpdate | state = newCellState } row) board
 
 
 getCell : Board -> Int -> Int -> Cell
@@ -125,13 +164,11 @@ updateCell board rowIndex columnIndex =
     let
         cell =
             getCell board rowIndex columnIndex
-    in
-    case cell.state of
-        Filled ->
-            { cell | state = NotFilled }
 
-        NotFilled ->
-            { cell | state = Filled }
+        newState =
+            determineCellState board rowIndex columnIndex cell
+    in
+    { cell | state = newState }
 
 
 updateBoard : Board -> Board
@@ -232,8 +269,8 @@ rowStyles rowIndex =
 
 cellStyles rowIndex columNindex cell =
     [ style "background-color" (cellColor cell)
-    , style "height" "20px"
-    , style "width" "20px"
+    , style "height" "15px"
+    , style "width" "15px"
     , style "border-style" "solid"
     , style "border-width" "thin"
     ]
@@ -246,7 +283,7 @@ cellColor cell =
             "yellow"
 
         NotFilled ->
-            "white"
+            "grey"
 
 
 
@@ -255,7 +292,7 @@ cellColor cell =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Time.every 1000 HandleTick
+    Time.every 100 HandleTick
 
 
 main : Program () Model Msg
