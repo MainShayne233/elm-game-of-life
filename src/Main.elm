@@ -22,6 +22,7 @@ type Msg
     = NoOp
     | CellClick Int Int Cell
     | Clear
+    | Next
     | SetExecutionState ExecutionState
     | HandleTick Time.Posix
 
@@ -54,7 +55,17 @@ rowCount =
 
 columnCount : Int
 columnCount =
-    40
+    rowCount
+
+
+rowPadding : Int
+rowPadding =
+    10
+
+
+columnPadding : Int
+columnPadding =
+    rowPadding
 
 
 initCell : Cell
@@ -64,12 +75,12 @@ initCell =
 
 initRow : Row
 initRow =
-    Array.initialize columnCount (always initCell)
+    Array.initialize (columnCount + columnPadding) (always initCell)
 
 
 blankBoard : Board
 blankBoard =
-    Array.initialize rowCount (always initRow)
+    Array.initialize (rowCount + rowPadding) (always initRow)
 
 
 initBoard : Board
@@ -175,12 +186,22 @@ updateClickedCell board rowIndex columnIndex cell =
     Array.set rowIndex (Array.set columnIndex { cellToUpdate | state = newCellState } row) board
 
 
-getCell : Board -> Int -> Int -> Cell
-getCell board rowIndex columnIndex =
+getRow : Int -> Board -> Row
+getRow rowIndex board =
     Array.get rowIndex board
         |> Maybe.withDefault (Array.fromList [])
-        |> Array.get columnIndex
+
+
+getRowCell : Int -> Row -> Cell
+getRowCell columnIndex row =
+    Array.get columnIndex row
         |> Maybe.withDefault (Cell NotFilled)
+
+
+getCell : Board -> Int -> Int -> Cell
+getCell board rowIndex columnIndex =
+    getRow rowIndex board
+        |> getRowCell columnIndex
 
 
 updateCell : Board -> Int -> Int -> Cell
@@ -197,10 +218,10 @@ updateCell board rowIndex columnIndex =
 
 updateBoard : Board -> Board
 updateBoard board =
-    List.range 0 (columnCount - 1)
+    List.range 0 (columnCount + columnPadding - 1)
         |> List.map
             (\rowIndex ->
-                List.range 0 (rowCount - 1)
+                List.range 0 (rowCount + rowPadding - 1)
                     |> List.map (\columnIndex -> updateCell board rowIndex columnIndex)
                     |> Array.fromList
             )
@@ -224,6 +245,9 @@ update msg model =
 
         Clear ->
             ( { model | board = blankBoard }, Cmd.none )
+
+        Next ->
+            ( handleRunningExecution model, Cmd.none )
 
         SetExecutionState executionState ->
             ( { model | executionState = executionState }, Cmd.none )
@@ -251,6 +275,7 @@ view model =
         , renderBoard model
         , renderExecutionControlButton model
         , button [ onClick Clear ] [ text "Clear" ]
+        , button [ onClick Next ] [ text "Next" ]
         ]
 
 
@@ -271,12 +296,22 @@ renderCell rowIndex columnIndex cell =
 
 renderRow : Int -> Row -> Html Msg
 renderRow rowIndex row =
-    div (rowStyles rowIndex) (Array.toList (Array.indexedMap (\columnIndex cell -> renderCell rowIndex columnIndex cell) row))
+    let
+        cells =
+            List.range 0 columnCount
+                |> List.map (\columnIndex -> renderCell columnIndex rowIndex (getRowCell columnIndex row))
+    in
+    div (rowStyles rowIndex) cells
 
 
 renderBoard : Model -> Html Msg
 renderBoard { board } =
-    div boardStyles (Array.toList (Array.indexedMap renderRow board))
+    let
+        rows =
+            List.range 0 rowCount
+                |> List.map (\rowIndex -> renderRow rowIndex (getRow rowIndex board))
+    in
+    div boardStyles rows
 
 
 
