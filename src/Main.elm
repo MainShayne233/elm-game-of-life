@@ -67,9 +67,19 @@ initRow =
     Array.initialize columnCount (always initCell)
 
 
+blankBoard : Board
+blankBoard =
+    Array.initialize rowCount (always initRow)
+
+
 initBoard : Board
 initBoard =
-    Array.initialize rowCount (always initRow)
+    blankBoard
+        |> fillCell 20 20
+        |> fillCell 20 21
+        |> fillCell 20 22
+        |> fillCell 19 22
+        |> fillCell 18 21
 
 
 init : ( Model, Cmd Msg )
@@ -79,6 +89,17 @@ init =
 
 
 ---- UPDATE ----
+
+
+fillCell : Int -> Int -> Board -> Board
+fillCell rowIndex columnIndex board =
+    let
+        updatedRow =
+            Array.get rowIndex board
+                |> Maybe.withDefault (Array.fromList [])
+                |> Array.set columnIndex (Cell Filled)
+    in
+    Array.set rowIndex updatedRow board
 
 
 amountOfFilledNeighbors : Board -> Int -> Int -> Int
@@ -199,7 +220,7 @@ update msg model =
             ( { model | board = updateClickedCell model.board rowIndex columnIndex cell }, Cmd.none )
 
         Clear ->
-            ( { model | board = initBoard }, Cmd.none )
+            ( { model | board = blankBoard }, Cmd.none )
 
         SetExecutionState executionState ->
             ( { model | executionState = executionState }, Cmd.none )
