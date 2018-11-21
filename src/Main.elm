@@ -92,12 +92,22 @@ init =
 
 
 fillCell : Int -> Int -> Board -> Board
-fillCell rowIndex columnIndex board =
+fillCell =
+    setCell (Cell Filled)
+
+
+clearCell : Int -> Int -> Board -> Board
+clearCell =
+    setCell (Cell NotFilled)
+
+
+setCell : Cell -> Int -> Int -> Board -> Board
+setCell cell rowIndex columnIndex board =
     let
         updatedRow =
             Array.get rowIndex board
                 |> Maybe.withDefault (Array.fromList [])
-                |> Array.set columnIndex (Cell Filled)
+                |> Array.set columnIndex cell
     in
     Array.set rowIndex updatedRow board
 
@@ -167,17 +177,10 @@ updateClickedCell board rowIndex columnIndex cell =
 
 getCell : Board -> Int -> Int -> Cell
 getCell board rowIndex columnIndex =
-    case Array.get rowIndex board of
-        Just row ->
-            case Array.get columnIndex row of
-                Just cell ->
-                    cell
-
-                _ ->
-                    Cell NotFilled
-
-        _ ->
-            Cell NotFilled
+    Array.get rowIndex board
+        |> Maybe.withDefault (Array.fromList [])
+        |> Array.get columnIndex
+        |> Maybe.withDefault (Cell NotFilled)
 
 
 updateCell : Board -> Int -> Int -> Cell
